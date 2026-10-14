@@ -179,3 +179,13 @@ input[type=range] { width: 100%; accent-color: var(--accent); height: 32px; }
   .stat-num { font-size: 110px; }
   .big-compare { gap: 20px; }
 }
+
+/* Pick who's in */
+.pick-hint { color: var(--muted); font-weight: 700; font-size: 15px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: -6px; }
+.person { cursor: pointer; padding: 8px 10px; margin: 0 -10px; border-radius: 14px; border: 2px solid transparent; transition: all .15s; opacity: .45; }
+.person:hover { border-color: var(--line); }
+.person.sel { opacity: 1; background: var(--accent-soft); }
+.tick { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 16px; font-weight: 800; color: transparent; background: var(--card); }
+.person.sel .tick { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sending .person { cursor: default; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }

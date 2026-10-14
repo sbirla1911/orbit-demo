@@ -5,7 +5,7 @@
 ## The one path (≈90 s)
 1. **About you** (live input): name, age, interest chips, budget slider, scope (My campus / Nearby campuses / Whole city), "Sync calendar" button. → *Find my people*
 2. **AI at work**: an animated network of students pulls toward you while a log ticks: scanning 2,418 students → matching interests → checking calendars → filtering by budget → booking slots.
-3. **Your matches**: 3 group cards (activity, people, shared interests, time everyone's free, price, match %). Tap **I'm in** → friends accept live → **Booked & paid** with confetti.
+3. **Your matches**: 3 group cards (activity, up to 3 suggested people, shared interests, time everyone's free, price, match %). Tap people to choose who's in, then tap **I'm in** → friends accept live → **Booked & paid** with confetti.
 4. **Your semester**: big before→after number (friends made: on your own vs. with Orbit). A slider for meetups per month changes the number live. Shows a friend list with friendship-strength bars and auto-scheduled repeat meetups.
 
 ## Look

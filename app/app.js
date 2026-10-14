@@ -107,11 +107,14 @@ function buildPlans(cands) {
     if (act.price > state.budget) continue;
     var pool = cands.filter(function (c) { return c.interests.indexOf(interest) > -1 && !used[c.name]; });
     if (!pool.length) continue;
-    var first = pool[0];
-    var slots = shared(MY_FREE, first.free);
-    var second = pool.slice(1).find(function (c) { return shared(slots, c.free).length > 0; });
-    var group = second ? [first, second] : [first];
-    var slot = shared(slots, second ? second.free : first.free)[0] || slots[0];
+    // Suggest up to 3 people who share a free slot; the user picks who's in.
+    var group = [pool[0]];
+    var slots = shared(MY_FREE, pool[0].free);
+    pool.slice(1).forEach(function (c) {
+      var common = shared(slots, c.free);
+      if (group.length < 3 && common.length) { group.push(c); slots = common; }
+    });
+    var slot = slots[0];
     group.forEach(function (p) { used[p.name] = true; });
     var avg = Math.round(group.reduce(function (t, p) { return t + p.score; }, 0) / group.length);
     plans.push({ interest: interest, act: act, group: group, slot: slot, score: avg, isNew: state.interests.indexOf(interest) === -1 });
@@ -202,11 +205,11 @@ function runMatching() {
 // ---------- Screen 3: Plans ----------
 function personRow(p) {
   var tags = p.common.map(function (i) { return byId[i].emoji; }).join(" ");
-  return '<div class="person" data-name="' + p.name + '">' +
+  return '<div class="person sel" data-name="' + p.name + '">' +
     '<div class="av" style="background:' + p.color + '">' + initials(p.name) + "</div>" +
     '<div><div class="p-name">' + p.name.split(" ")[0] + ", " + p.age + " " + tags + "</div>" +
     '<div class="p-sub">' + p.major + " · " + p.campus + "</div></div>" +
-    '<span class="p-status"></span></div>';
+    '<span class="p-status"><span class="tick">✓</span></span></div>';
 }
 
 function renderPlans() {
@@ -221,7 +224,8 @@ function renderPlans() {
     return '<div class="card" id="card-' + i + '">' +
       '<div class="card-top"><div class="act-emoji">' + byId[p.interest].emoji + '</div><div class="score">' + p.score + "% match</div></div>" +
       '<div><div class="act-title">' + p.act.title + '</div><div class="act-venue">📍 ' + p.act.venue + (p.isNew ? " · try something new" : "") + "</div></div>" +
-      '<div class="meta"><span>🗓 ' + p.slot + "</span><span>💵 " + money(p.act.price) + "</span><span>👥 " + (p.group.length + 1) + "</span></div>" +
+      '<div class="meta"><span>🗓 ' + p.slot + "</span><span>💵 " + money(p.act.price) + "</span><span>👥 <b class=\"count\">" + (p.group.length + 1) + "</b></span></div>" +
+      '<div class="pick-hint">Tap to choose who\'s in</div>' +
       '<div class="people">' + p.group.map(personRow).join("") + "</div>" +
       '<div class="card-actions"><button class="btn ghost" data-pass="' + i + '">Pass</button><button class="btn primary" data-join="' + i + '">I\'m in</button></div>' +
       "</div>";
@@ -229,6 +233,16 @@ function renderPlans() {
 
   $("cards").querySelectorAll("[data-pass]").forEach(function (b) {
     b.onclick = function () { $("card-" + b.dataset.pass).classList.add("passed"); };
+  });
+  $("cards").querySelectorAll(".person").forEach(function (row) {
+    row.onclick = function () {
+      var card = row.closest(".card");
+      if (card.classList.contains("sending")) return;
+      row.classList.toggle("sel");
+      var n = card.querySelectorAll(".person.sel").length;
+      card.querySelector(".count").textContent = n + 1;
+      card.querySelector("[data-join]").disabled = n === 0;
+    };
   });
   $("cards").querySelectorAll("[data-join]").forEach(function (b) {
     b.onclick = function () { join(+b.dataset.join); };
@@ -239,7 +253,11 @@ function join(i) {
   var p = state.plans[i], card = $("card-" + i);
   var actions = card.querySelector(".card-actions");
   actions.outerHTML = '<div class="waiting">Sending invites…</div>';
+  card.classList.add("sending");
+  card.querySelectorAll(".person:not(.sel)").forEach(function (r) { r.remove(); });
   var rows = card.querySelectorAll(".person");
+  var chosen = Array.prototype.map.call(rows, function (r) { return r.dataset.name; });
+  var hint = card.querySelector(".pick-hint"); if (hint) hint.remove();
   rows.forEach(function (r) { r.querySelector(".p-status").textContent = "⏳"; });
 
   var chain = wait(500);
@@ -251,7 +269,9 @@ function join(i) {
       '<div class="booked-box">✓ Booked · ' + p.slot +
       "<small>" + (p.act.price ? "$" + p.act.price + " paid with Orbit Pay · " : "") + "added to everyone's calendar</small></div>";
     card.classList.add("booked");
-    p.group.forEach(function (g) { if (state.booked.indexOf(g) === -1) state.booked.push(g); });
+    p.group.forEach(function (g) {
+      if (chosen.indexOf(g.name) > -1 && state.booked.indexOf(g) === -1) state.booked.push(g);
+    });
     confetti();
     $("to-semester").classList.remove("hidden");
   });
